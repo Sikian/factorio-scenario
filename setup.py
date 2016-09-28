@@ -19,7 +19,7 @@ setup(
     version="0.0.1",
     entry_points=dict(
         console_scripts=[
-            "fmcd = factoriomcd.cli:main",
+            "fmcd = factoriomcd.main:main",
         ]
     )
 )
