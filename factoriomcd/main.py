@@ -2,7 +2,7 @@ from configargparse import ArgParser
 from multiprocessing import Value
 from factoriomcd.rcon import RconConnection
 from threading import Thread
-from time import sleep
+from time import sleep, time
 from queue import Queue, Empty
 
 import asyncio
@@ -55,6 +55,7 @@ class RconSenderThread(Thread):
         self.options = options
         self.running = Value('b', True)
         self.q = Queue()
+        self.connected = False
 
     @asyncio.coroutine
     def exec_command(self, cmd):
@@ -62,7 +63,7 @@ class RconSenderThread(Thread):
         try:
             yield from self.conn.exec_command(cmd)
         except:
-            logger.exception("Error")
+            logger.exception("Error sending command to rcon")
             while not reconnected and self.running.value:
                 try:
                     self.conn = RconConnection(self.options.rcon_host, int(self.options.rcon_port),
@@ -70,7 +71,9 @@ class RconSenderThread(Thread):
                     yield from self.conn.exec_command("/silent-command print('FactorioMCd connected.')")
                     yield from self.conn.exec_command("/silent-command print('FactorioMCd connected.')")
                     reconnected = True
+                    self.connected = True
                 except:
+                    logger.exception("Error reconnecting...")
                     sleep(1)
 
             reconnected = False
@@ -81,16 +84,31 @@ class RconSenderThread(Thread):
         policy = asyncio.get_event_loop_policy()
         policy.set_event_loop(policy.new_event_loop())
         loop = asyncio.get_event_loop()
-        self.conn = RconConnection(self.options.rcon_host, int(self.options.rcon_port), self.options.rcon_password)
-        resp = loop.run_until_complete(self.conn.exec_command("/silent-command print('FactorioMCd connected.')"))
-        resp = loop.run_until_complete(self.conn.exec_command("/silent-command print('FactorioMCd connected.')"))
+        last_data = time()
+
+        try:
+            self.conn = RconConnection(self.options.rcon_host, int(self.options.rcon_port), self.options.rcon_password)
+            resp = loop.run_until_complete(self.conn.exec_command("/silent-command print('FactorioMCd connected.')"))
+            resp = loop.run_until_complete(self.conn.exec_command("/silent-command print('FactorioMCd connected.')"))
+            self.connected = True
+        except:
+            logger.exception("Could not connect to rcon, retry delayed.")
+
         while self.running.value:
             try:
                 data = self.q.get(timeout=3)
+                last_data = time()
             except Empty:
                 data = None
 
             if not data:
+                if (time() - last_data) > 30 and self.connected:
+                    try:
+                        self.conn.close()
+                        self.connected = False
+                        logger.debug("Connection closed")
+                    except:
+                        logger.exception("Error closing connection.")
                 sleep(1)
             else:
                 resp = loop.run_until_complete(self.exec_command(data))
@@ -127,8 +145,8 @@ class FactorioMCd:
         logger.debug("In main loop")
         while True:
             if self.options.debug:
-                import pdb
-                pdb.set_trace()
+                import ipdb
+                ipdb.set_trace()
 
             d = self.log.q.get()
             logger.debug(d)
@@ -142,9 +160,15 @@ def main():
 
     parser.add('--log-file', default="/opt/factorio/server.out")
 
+    parser.add('--server-id', default="1")
+
     parser.add('--rcon-host', default="localhost")
     parser.add('--rcon-password', default="asdasd")
     parser.add('--rcon-port', default=31337)
+
+    parser.add('--ws-host', default="localhost")
+    parser.add('--ws-port', default=8000)
+    parser.add('--ws-password', default="asdasd")
 
     options = parser.parse_args()
     if options.verbose:
