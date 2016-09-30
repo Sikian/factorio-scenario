@@ -114,12 +114,12 @@ function update_stats()
     global.local_science_3 = game.forces['player'].item_production_statistics.get_output_count('science-pack-3')
     global.local_alien_science = game.forces['player'].item_production_statistics.get_output_count('alien-science-pack')
 
-    print("##FMC::player-count=" .. #game.players)
-    print("##FMC::player-online-count=" .. global.local_players)
-    print("##FMC::science-pack-1=" .. global.local_science_1)
-    print("##FMC::science-pack-2=" .. global.local_science_2)
-    print("##FMC::science-pack-3=" .. global.local_science_3)
-    print("##FMC::alien-science-pack=" .. global.local_alien_science)
+    print("##FMC::player-count::" .. #game.players)
+    print("##FMC::player-online-count::" .. global.local_players)
+    print("##FMC::science-pack-1::" .. global.local_science_1)
+    print("##FMC::science-pack-2::" .. global.local_science_2)
+    print("##FMC::science-pack-3::" .. global.local_science_3)
+    print("##FMC::alien-science-pack::" .. global.local_alien_science)
 end
 
 
@@ -147,7 +147,7 @@ script.on_event(defines.events.on_tick, function(event)
     local tick = game.tick
 
     if (global.remaining_until_update < 1) then
-        global.remaining_until_update = second_to_tick(10)
+        global.remaining_until_update = second_to_tick(1) -- TODO: Change to 10 for live! ;)
         update_stats()
     else
         global.remaining_until_update = global.remaining_until_update - 1
@@ -159,6 +159,8 @@ end)
 
 script.on_event(defines.events.on_player_joined_game, function(event)
     local player = game.players[event.player_index]
+    print("##FMC::player_joined::" .. player.name)
+
     player.print("-== TEST Welcome to [EU] /r/factorio MMO. Grievers WILL be banned.")
     player.print("See the official rules on /r/factorioMMO for more details.")
     player.print("")
@@ -167,7 +169,10 @@ script.on_event(defines.events.on_player_joined_game, function(event)
 end)
 
 
-script.on_event(defines.events.on_player_joined_game, function(event)
+script.on_event(defines.events.on_player_left_game, function(event)
+    local player = game.players[event.player_index]
+    print("##FMC::player_left::" .. player.name)
+
     global.local_players = #filter(function(o) return o.connected end, game.players)
 end)
 
@@ -213,6 +218,13 @@ remote.add_interface("rconstats", {
         if (statname == "alien-science-pack") then
             global.remote_alien_science = value
             return
+        end
+    end,
+    callvictory = function(is_winner) 
+        if (is_winner) then
+            game.print("YOU WON!")
+        else
+            game.print("YOU LOSE :(")
         end
     end
 })
