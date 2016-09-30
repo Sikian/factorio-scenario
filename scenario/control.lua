@@ -42,6 +42,17 @@ function number_to_readable(num)
 end
 
 
+function get_player_online_count()
+    local counter = 0
+    for i, x in pairs(game.players) do
+        if x.connected then
+            counter = counter + 1
+        end
+    end
+    return counter
+end
+
+
 function create_gui(player)
     if (player.gui.top.factoriommo_frame ~= nil) then
         player.gui.top.factoriommo_frame.destroy()
@@ -164,7 +175,7 @@ script.on_event(defines.events.on_player_joined_game, function(event)
     player.print("-== TEST Welcome to [EU] /r/factorio MMO. Grievers WILL be banned.")
     player.print("See the official rules on /r/factorioMMO for more details.")
     player.print("")
-    global.local_players = #filter(function(o) return o.connected end, game.players)
+    global.local_players = get_player_online_count()
     player.print("There are currently " .. global.local_players .. " players online.")
 end)
 
@@ -173,7 +184,7 @@ script.on_event(defines.events.on_player_left_game, function(event)
     local player = game.players[event.player_index]
     print("##FMC::player_left::" .. player.name)
 
-    global.local_players = #filter(function(o) return o.connected end, game.players)
+    global.local_players = get_player_online_count()
 end)
 
 

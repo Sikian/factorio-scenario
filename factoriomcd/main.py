@@ -80,6 +80,7 @@ class RconSenderThread(Thread):
     def exec_command(self, cmd):
         reconnected = False
         try:
+            logger.debug("Sending command to rcon: %s", cmd)
             yield from self.conn.exec_command(cmd)
         except:
             logger.exception("Error sending command to rcon")
@@ -279,7 +280,54 @@ class FactorioMCd:
             logger.debug("Left data with key %s untouched, value: %s", key, value)
 
     def parse_wsdata(self, data):
-        pass
+        namespace = data.get('namespace')
+        if not namespace:
+            return
+
+        if namespace == 'chat':
+            target = data.get('target')
+
+            if not target:
+                return
+
+            if target == "all":
+                self.broadcast_message_ingame(data['msg'])
+            try:
+                if int(target) == self.options.server_id:
+                    self.broadcast_message_ingame(data['msg'])
+            except ValueError:
+                pass
+
+        elif namespace == 'scores':
+            enemy_scores = None
+            idata = data['data']
+            for k, v in idata.items():
+                if str(k) == str(self.options.server_id):
+                    continue
+                else:
+                    enemy_scores = v
+                    break
+
+            if not enemy_scores:
+                return
+
+            for k, v in enemy_scores.items():
+                if k == 'players-online':
+                    try:
+                        self.send_enemy_score('player-online-count', v)
+                    except ValueError:
+                        pass
+                elif k in ['science-pack-1', 'science-pack-2', 'science-pack-3', 'alien-science-pack']:
+                    try:
+                        self.send_enemy_score(k, int(v))
+                    except ValueError:
+                        pass
+
+    def broadcast_message_ingame(self, message):
+        self.rcon.q.put("#GLOBAL: " + message)
+
+    def send_enemy_score(self, key, value):
+        self.rcon.q.put('/silent-command remote.call("rconstats", "updatestats", "{0}", "{1}")'.format(key, value))
 
 
 def main():
