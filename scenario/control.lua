@@ -188,6 +188,11 @@ script.on_event(defines.events.on_player_left_game, function(event)
 end)
 
 
+script.on_event(defines.events.on_rocket_launched, function(event)
+    print("##FMC::rocket_launched")
+end)
+
+
 script.on_init(function()
     game.disable_replay()
 

@@ -273,6 +273,17 @@ class FactorioMCd:
                     "data": value
                 }
             })
+        elif key == 'player-online-count':
+            value = int(value)
+            if value <= 0:
+                return
+            self.ws.to_server.put({
+                "namespace": "pass",
+                "data": {
+                    "type": key,
+                    "data": value
+                }
+            })
         elif key in ['player_joined', 'player_left']:
             logger.debug("Sending player event for %s : %s", key, value)
             self.ws.to_server.put({
@@ -283,6 +294,12 @@ class FactorioMCd:
                         "playername": value
                     }
                 }
+            })
+        elif key == 'rocket_launched':
+            logger.debug("Sending player event for %s : %s", key, value)
+            self.ws.to_server.put({
+                "namespace": "event",
+                "data": {"type": key}
             })
         else:
             logger.debug("Left data with key %s untouched, value: %s", key, value)
@@ -330,6 +347,11 @@ class FactorioMCd:
                         self.send_enemy_score(k, int(v))
                     except ValueError:
                         pass
+        elif namespace == 'rconcommand':
+            try:
+                self.rcon.q.put(data['data'])
+            except:
+                pass
 
     def broadcast_message_ingame(self, message):
         self.rcon.q.put("#GLOBAL: " + message)
