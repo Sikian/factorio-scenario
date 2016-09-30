@@ -141,6 +141,7 @@ class MasterConnectionClient(WebSocketClient):
         self.parent = parent
 
     def opened(self):
+        self.parent.needs_reconnect = False
         logger.debug("Websocket connection established!")
         self.send(json.dumps({
             'namespace': 'auth',
@@ -151,6 +152,7 @@ class MasterConnectionClient(WebSocketClient):
 
     def closed(self, code, reason=None):
         logger.info("Websocket to master closed with code %i, reason: %s", code, reason)
+        self.parent.needs_reconnect = True
 
     def received_message(self, m):
         try:
@@ -171,14 +173,20 @@ class MasterConnectionThread(Thread):
         self.running = Value('b', True)
         self.from_server = Queue()
         self.to_server = Queue()
+        self.needs_reconnect = True
 
     def run(self):
         logger.debug("Booting master connection websocket thread")
 
         self.client = MasterConnectionClient(self.options.ws_url, self, protocols=['http-only', 'chat'])
-        self.client.connect()
-
         while self.running.value:
+            if self.needs_reconnect:
+                try:
+                    logger.info("Reconnecting websockets")
+                    self.client.connect()
+                    sleep(3)
+                except:
+                    pass
             try:
                 data = self.to_server.get(timeout=3)
                 logger.debug("Sending data to ws: %s", data)
