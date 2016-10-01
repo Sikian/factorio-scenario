@@ -12,8 +12,11 @@ import asyncio
 import coloredlogs
 import logging
 import json
+import re
 import os
 
+
+CHAT_LOG_REGEX = re.compile(r'^(?P<year>\d{4})\-(?P<month>\d{2})\-(?P<day>\d{2}) (?P<hour>\d{2})\:(?P<minute>\d{2})\:(?P<second>\d{2}) (?P<namespace>\[\w+\]) (?P<username>\S+)\: (?P<message>.+)$')  # noqa
 
 logger = logging.getLogger(__name__)
 
@@ -24,6 +27,7 @@ class LogReaderThread(Thread):
         self.options = options
         self.running = Value('b', True)
         self.q = Queue()
+        self.chat = Queue()
 
     def run(self):
         logger.debug("Booted log reader thread")
@@ -52,7 +56,13 @@ class LogReaderThread(Thread):
                 self.q.put(line.lstrip('##FMC::'))
             else:
                 line = line.strip()
-                logger.debug("Line found but not processed: %s", line)
+                m = CHAT_LOG_REGEX.match(line)
+                if m:
+                    items = m.groupdict()
+                    logger.debug("Got a line of chat: %s", items)
+                    self.chat.put(items)
+                else:
+                    logger.debug("Line found but not processed: %s", line)
 
             if line:
                 counter += 1
@@ -247,6 +257,16 @@ class FactorioMCd:
                 logger.exception("Something went wrong handling some log data")
 
             try:
+                chatdata = self.log.chat.get(False)
+                self.parse_chatdata(chatdata)
+                sleeptime = 0.1
+            except Empty:
+                if sleeptime != 0.1:
+                    sleeptime = 0.5
+            except:
+                logger.exception("Something went wrong handling some chat data")
+
+            try:
                 wsdata = self.ws.from_server.get(False)
                 self.parse_wsdata(wsdata)
                 sleeptime = 0.1
@@ -257,6 +277,15 @@ class FactorioMCd:
                 logger.exception("Something went wrong handling some ws data")
 
             sleep(sleeptime)
+
+    def parse_chatdata(self, data):
+        if data.get('namespace', False):
+            del data['namespace']
+
+        self.ws.to_server.put({
+            "namespace": "chat",
+            "data": data
+        })
 
     def parse_logdata(self, data):
         splitted = data.split("::")
