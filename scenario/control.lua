@@ -1,22 +1,3 @@
-function formattime(ticks)
-  local seconds = ticks / 60
-  local minutes = math.floor((seconds)/60)
-  local seconds = math.floor(seconds - 60*minutes)
-  return string.format("%d:%02d", minutes, seconds)
-end
-
--- filter(function, table)
--- e.g: filter(is_even, {1,2,3,4}) -> {2,4}
-function filter(func, tbl)
-    local newtbl= {}
-    for i,v in pairs(tbl) do
-        if func(v) then
-            newtbl[i]=v
-        end
-    end
-    return newtbl
-end
-
 function second_to_tick(seconds)
     return seconds * 60 * game.speed
 end
@@ -29,6 +10,23 @@ function tick_to_second(ticks)
     return math.floor(ticks / 60 / game.speed)
 end
 
+function formattime(ticks)
+    local seconds = tick_to_second(ticks)
+    local days = math.floor(seconds / 86400)
+    local remainder = seconds % 86400
+    local hours = math.floor(remainder / 3600)
+    local remainder = remainder % 3600
+    local minutes = math.floor(remainder / 60)
+    local seconds = remainder % 60
+
+    if days and days > 0 then
+        return string.format("%dd %02d:%02d", days, hours, minutes)
+    end
+    if hours and hours > 0 then
+        return string.format("%d:%02d:%02d", hours, minutes, seconds)
+    end
+    return string.format("%d:%02d", minutes, seconds)
+end
 
 function number_to_readable(num)
     num = tonumber(num)
@@ -172,7 +170,7 @@ script.on_event(defines.events.on_player_joined_game, function(event)
     local player = game.players[event.player_index]
     print("##FMC::player_joined::" .. player.name)
 
-    player.print("-== TEST Welcome to [EU] /r/factorio MMO. Grievers WILL be banned.")
+    player.print("-== TEST Welcome to [EU] /r/factorio MMO. Grievers WILL be banned.")  -- TODO: no test in string there
     player.print("See the official rules on /r/factorioMMO for more details.")
     player.print("")
     global.local_players = get_player_online_count()
@@ -191,6 +189,26 @@ end)
 script.on_event(defines.events.on_rocket_launched, function(event)
     print("##FMC::rocket_launched")
 end)
+
+
+script.on_event(defines.events.on_gui_click, function(event)
+    if event.element.name == "factoriommo_dialog_button" then
+        local player = game.players[event.player_index]
+        local maybegui = player.gui.center['factoriommo_dialog']
+        if maybegui then
+            maybegui.destroy()
+        end
+    end
+end)
+
+
+function showdialog(title, message)
+    for i, x in pairs(game.players) do
+        local endgamegui = x.gui.center.add{type="frame", name="factoriommo_dialog", caption=title, direction="vertical"}
+        endgamegui.add{type="label", caption=message}
+        endgamegui.add{type="button", name="factoriommo_dialog_button", caption="Close this message"}
+    end
+end
 
 
 script.on_init(function()
@@ -238,9 +256,9 @@ remote.add_interface("rconstats", {
     end,
     callvictory = function(is_winner) 
         if (is_winner) then
-            game.print("YOU WON!")
+            showdialog("You win :D", "You have beaten the other server's team. Well done!")
         else
-            game.print("YOU LOSE :(")
+            showdialog("You lost :(", "You were beaten by the other server's team. Better luck next time.")
         end
     end
 })
