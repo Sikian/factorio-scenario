@@ -163,7 +163,7 @@ class MasterConnectionClient(WebSocketClient):
             else:
                 logger.debug("Auth response: %s", decoded)
         except:
-            logger.exception("Could not decode json message")
+            logger.exception("Could not decode json message: %s", str(m))
 
 
 class MasterConnectionThread(Thread):
