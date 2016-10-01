@@ -304,10 +304,10 @@ class FactorioMCd:
             })
         elif key == 'player-online-count':
             value = int(value)
-            if value <= 0:
+            if value < 0:
                 return
             self.ws.to_server.put({
-                "namespace": "pass",
+                "namespace": "updatecounter",
                 "data": {
                     "type": key,
                     "data": value
