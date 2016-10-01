@@ -310,7 +310,7 @@ class FactorioMCd:
             return
 
         if namespace == 'chat':
-            self.broadcast_message_ingame(data['msg'])
+            self.broadcast_message_ingame(data['data']['msg'])
 
         elif namespace == 'scores':
             enemy_scores = None
@@ -338,7 +338,7 @@ class FactorioMCd:
                         pass
         elif namespace == 'rconcommand':
             try:
-                self.rcon.q.put(data)
+                self.rcon.q.put(data['data'])
             except:
                 pass
 
