@@ -338,7 +338,7 @@ class FactorioMCd:
                         pass
         elif namespace == 'rconcommand':
             try:
-                self.rcon.q.put(data['data'])
+                self.rcon.q.put(data)
             except:
                 pass
 
