@@ -367,13 +367,13 @@ class FactorioMCd:
                         pass
         elif namespace == 'victory':
             try:
-                winner = bool(data['winner'])
+                winner = bool(data['data']['winner'])
                 if winner:
                     self.rcon.q.put("/silent-command remote.call('rconstats', 'callvictory', true)")
                 else:
                     self.rcon.q.put("/silent-command remote.call('rconstats', 'callvictory', false)")
             except:
-                pass
+                logger.exception("Error parsing victory command")
 
         elif namespace == 'rconcommand':
             try:
