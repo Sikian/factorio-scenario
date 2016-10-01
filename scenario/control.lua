@@ -156,7 +156,7 @@ script.on_event(defines.events.on_tick, function(event)
     local tick = game.tick
 
     if (global.remaining_until_update < 1) then
-        global.remaining_until_update = second_to_tick(1) -- TODO: Change to 10 for live! ;)
+        global.remaining_until_update = second_to_tick(10) -- TODO: Change to 10 for live! ;)
         update_stats()
     else
         global.remaining_until_update = global.remaining_until_update - 1
@@ -169,12 +169,16 @@ end)
 script.on_event(defines.events.on_player_joined_game, function(event)
     local player = game.players[event.player_index]
     print("##FMC::player_joined::" .. player.name)
-
-    player.print("-== TEST Welcome to [EU] /r/factorio MMO. Grievers WILL be banned.")  -- TODO: no test in string there
-    player.print("See the official rules on /r/factorioMMO for more details.")
-    player.print("")
     global.local_players = get_player_online_count()
-    player.print("There are currently " .. global.local_players .. " players online.")
+
+    player.print("-- Welcome to [EU] /r/factorioMMO. Grievers WILL be banned.")  -- TODO: no test in string there
+    player.print("-- There are currently " .. global.local_players .. " players online.")
+
+    player.print("-- Your goal is to consume these resources before the other server does:")
+    player.print("--  - 8000 Science Pack 1  - 8000 Science Pack 2")
+    player.print("--  - 2000 Science Pack 3  - 250 Alien Science Pack")
+
+    player.print("-- See the stickied post on /r/factorioMMO for more details.")
 end)
 
 
