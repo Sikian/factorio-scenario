@@ -204,6 +204,10 @@ end)
 
 function showdialog(title, message)
     for i, x in pairs(game.players) do
+        local maybegui = x.gui.center['factoriommo_dialog']
+        if maybegui then
+            maybegui.destroy()
+        end
         local endgamegui = x.gui.center.add{type="frame", name="factoriommo_dialog", caption=title, direction="vertical"}
         endgamegui.add{type="label", caption=message}
         endgamegui.add{type="button", name="factoriommo_dialog_button", caption="Close this message"}

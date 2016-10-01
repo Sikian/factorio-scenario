@@ -365,6 +365,16 @@ class FactorioMCd:
                         self.send_enemy_score(k, int(v))
                     except ValueError:
                         pass
+        elif namespace == 'victory':
+            try:
+                winner = bool(data['winner'])
+                if winner:
+                    self.rcon.q.put("/silent-command remote.call('rconstats', 'callvictory', true)")
+                else:
+                    self.rcon.q.put("/silent-command remote.call('rconstats', 'callvictory', false)")
+            except:
+                pass
+
         elif namespace == 'rconcommand':
             try:
                 self.rcon.q.put(data['data'])
