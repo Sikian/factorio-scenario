@@ -310,18 +310,7 @@ class FactorioMCd:
             return
 
         if namespace == 'chat':
-            target = data.get('target')
-
-            if not target:
-                return
-
-            if target == "all":
-                self.broadcast_message_ingame(data['msg'])
-            try:
-                if int(target) == self.options.server_id:
-                    self.broadcast_message_ingame(data['msg'])
-            except ValueError:
-                pass
+            self.broadcast_message_ingame(data['msg'])
 
         elif namespace == 'scores':
             enemy_scores = None
