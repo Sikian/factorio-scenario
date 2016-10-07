@@ -330,6 +330,15 @@ class FactorioMCd:
                 "namespace": "event",
                 "data": {"type": key}
             })
+        elif key == 'rocket-silo-built':
+            logger.debug("Sending event for rocket built")
+            self.ws_to_server.put({
+                "namespace": "event",
+                "data": {
+                    "type": "rocket-silo-built",
+                    "playername": value
+                }
+            })
         else:
             logger.debug("Left data with key %s untouched, value: %s", key, value)
 

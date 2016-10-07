@@ -194,6 +194,14 @@ script.on_event(defines.events.on_rocket_launched, function(event)
     print("##FMC::rocket_launched")
 end)
 
+script.on_event(defines.events.on_built_entity, function(event)
+    local player = game.players[event.player_index]
+    local item_name = event.created_entity.name
+    if (item_name == "rocket-silo") then
+        print("##FMC::rocket-silo-built::"..player.name)
+    end
+end)
+
 
 script.on_event(defines.events.on_gui_click, function(event)
     if event.element.name == "factoriommo_dialog_button" then
