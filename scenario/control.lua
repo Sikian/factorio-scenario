@@ -73,6 +73,8 @@ function create_gui(player)
     table.add{type="label", caption= "?", name="local_science_3"}
     table.add{type="label", caption="Alien science", style="bold_label_style"}
     table.add{type="label", caption= "?", name="local_alien_science"}
+    table.add{type="label", caption="Rocket progress", style="bold_label_style"}
+    table.add{type="label", caption= "?", name="local_rocket_progress"}
 
 
     table.add{type="label", caption="Other server", style="caption_label_style"}
@@ -88,6 +90,8 @@ function create_gui(player)
     table.add{type="label", caption= "?", name="remote_science_3"}
     table.add{type="label", caption="Alien science", style="bold_label_style"}
     table.add{type="label", caption= "?", name="remote_alien_science"}
+    table.add{type="label", caption="Rocket progress", style="bold_label_style"}
+    table.add{type="label", caption= "?", name="remote_rocket_progress"}
 
     table.add{type="label", caption="Time played", style="caption_label_style"}
     table.add{type="label", caption= "?", name="time_played"}
@@ -107,12 +111,14 @@ function update_gui()
         table.local_science_2.caption = number_to_readable(global.local_science_2)
         table.local_science_3.caption = number_to_readable(global.local_science_3)
         table.local_alien_science.caption =  number_to_readable(global.local_alien_science)
+        table.local_rocket_progress.caption =  global.local_rocket_progress .. "%"
 
         table.remote_players.caption = global.remote_players
         table.remote_science_1.caption = number_to_readable(global.remote_science_1)
         table.remote_science_2.caption = number_to_readable(global.remote_science_2)
         table.remote_science_3.caption = number_to_readable(global.remote_science_3)
         table.remote_alien_science.caption = number_to_readable(global.remote_alien_science)
+        table.remote_rocket_progress.caption =  global.remote_rocket_progress .. "%"
     end
 end
 
@@ -123,12 +129,22 @@ function update_stats()
     global.local_science_3 = game.forces['player'].item_production_statistics.get_output_count('science-pack-3')
     global.local_alien_science = game.forces['player'].item_production_statistics.get_output_count('alien-science-pack')
 
+    local highest_rocket_progress = 0
+    for i, item in pairs(global.known_rocket_silos) do
+        local progress = item.rocket_parts
+        if (progress > highest_rocket_progress) then
+            highest_rocket_progress = progress
+        end
+    end
+    global.local_rocket_progress = highest_rocket_progress
+
     print("##FMC::player-count::" .. #game.players)
     print("##FMC::player-online-count::" .. global.local_players)
     print("##FMC::science-pack-1::" .. global.local_science_1)
     print("##FMC::science-pack-2::" .. global.local_science_2)
     print("##FMC::science-pack-3::" .. global.local_science_3)
     print("##FMC::alien-science-pack::" .. global.local_alien_science)
+    print("##FMC::rocket-progress::" .. global.local_rocket_progress)
 end
 
 
@@ -171,14 +187,12 @@ script.on_event(defines.events.on_player_joined_game, function(event)
     print("##FMC::player_joined::" .. player.name)
     global.local_players = get_player_online_count()
 
-    player.print("-- Welcome to [EU] /r/factorioMMO. Grievers WILL be banned.")  -- TODO: no test in string there
-    player.print("-- There are currently " .. global.local_players .. " players online.")
+    player.print("-- Welcome to [EU] /r/factorioMMO. Griefers WILL be banned.")  -- TODO: no test in string there
+    player.print("-- There are currently " .. global.local_players .. " players on this server.")
 
-    player.print("-- Your goal is to consume these resources before the other server does:")
-    player.print("--  - 8000 Science Pack 1  - 8000 Science Pack 2")
-    player.print("--  - 2000 Science Pack 3  - 250 Alien Science Pack")
-
-    player.print("-- See the stickied post on /r/factorioMMO for more details.")
+    player.print("--")
+    player.print("-- Your goal is to launch a rocket before the other server does.")
+    player.print("-- See the stickied post on /r/factorioMMO for rules and more details.")
 end)
 
 
@@ -199,6 +213,24 @@ script.on_event(defines.events.on_built_entity, function(event)
     local item_name = event.created_entity.name
     if (item_name == "rocket-silo") then
         print("##FMC::rocket-silo-built::"..player.name)
+        table.insert(global.known_rocket_silos, event.created_entity)
+    end
+end)
+
+script.on_event(defines.events.on_preplayer_mined_item, function(event) 
+    local player = game.players[event.player_index]
+    local item_name = event.entity.name
+    if (item_name == "rocket-silo") then
+        print("##FMC::rocket-silo-mined::"..player.name)
+        local item_pos = nil
+        for i, x in pairs(global.known_rocket_silos) do
+            if (x == event.entity) then
+                item_pos = i
+            end
+        end
+        if (item_pos ~= nil) then
+            table.remove(global.known_rocket_silos, item_pos)
+        end
     end
 end)
 
@@ -242,6 +274,9 @@ script.on_init(function()
     global.remote_science_3 = 0
     global.remote_alien_science = 0
 
+    global.known_rocket_silos = {}
+    global.local_rocket_progress = 0
+    global.remote_rocket_progress = 0
 end)
 
 remote.add_interface("rconstats", {
@@ -267,6 +302,10 @@ remote.add_interface("rconstats", {
         end
         if (statname == "alien-science-pack") then
             global.remote_alien_science = value
+            return
+        end
+        if (statname == "rocket-progress") then
+            global.remote_rocket_progress = value
             return
         end
     end,

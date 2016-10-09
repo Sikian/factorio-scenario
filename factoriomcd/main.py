@@ -302,7 +302,7 @@ class FactorioMCd:
                     "data": value
                 }
             })
-        elif key == 'player-online-count':
+        elif key in ['player-online-count', 'rocket-progress']:
             value = int(value)
             if value < 0:
                 return
@@ -330,7 +330,7 @@ class FactorioMCd:
                 "namespace": "event",
                 "data": {"type": key}
             })
-        elif key == 'rocket-silo-built':
+        elif key in ['rocket-silo-built', 'rocket-silo-mined']:
             logger.debug("Sending event for rocket built")
             self.ws_to_server.put({
                 "namespace": "event",
@@ -369,7 +369,7 @@ class FactorioMCd:
                         self.send_enemy_score('player-online-count', v)
                     except ValueError:
                         pass
-                elif k in ['science-pack-1', 'science-pack-2', 'science-pack-3', 'alien-science-pack']:
+                elif k in ['science-pack-1', 'science-pack-2', 'science-pack-3', 'alien-science-pack', 'rocket-progress']:
                     try:
                         self.send_enemy_score(k, int(v))
                     except ValueError:
